@@ -18,11 +18,13 @@ from typing import NamedTuple
 
 from llm_connector import llm_stream_result, LlmGenerationParameters, LlmModelConfig, craft_prompt
 
+# TODO: Refactor, extract document processing logic.
 class RagParameters(NamedTuple):
     chunk_size: int
     chunk_overlap: int
     top_k: int
 
+# TODO: Refactor, extract document processing logic.
 def load_pdf_to_text(file_like) -> str:
     pdf_reader = PyPDF2.PdfFileReader(file_like)
     full_text = ""
@@ -34,6 +36,7 @@ def load_pdf_to_text(file_like) -> str:
         full_text += text
     return full_text
 
+# TODO: Refactor, extract document processing logic.
 def text_splitter(text: str, chunk_size=100, chunk_overlap=5):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     all_splits = text_splitter.create_documents([text])
@@ -72,6 +75,7 @@ def main_ui_logic():
         model_temperature = st.slider("Temperature", 0.0, 1.0, 0.01, key="model_temperature")
         model_repetition_penalty = st.slider("Repetition Penalty", 0.0, 2.0, 1.03, key="model_repetition_penalty")
 
+        # TODO: Refactor, extract document processing logic.
         st.markdown("### RAG Settings")
         rag_chunk_size = st.slider("Chunk Size", 0, 500, 100, key="rag_chunk_size")
         rag_chunk_overlap = st.slider("Chunk Overlap", 0, 100, 5, key="rag_chunk_overlap")
