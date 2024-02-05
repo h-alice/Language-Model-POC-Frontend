@@ -7,67 +7,21 @@ import random
 
 import streamlit as st  # UI Framework
 
-from langchain.chains import LLMChain        # LangChain Library
-from langchain.prompts import PromptTemplate # LangChain Library
-
-from langchain_openai import OpenAI # LangChain OpenAI Adapter
-
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from typing import NamedTuple
 
 import PyPDF2
 
-from langchain_community.llms import HuggingFaceTextGenInference
-from langchain import PromptTemplate
+
 from typing import NamedTuple
-import asyncio
 
-
-template = """
-<s>[INST] <<SYS>>
-{sys}
-<</SYS>>
- 
-{user} [/INST]
-"""
-
-
-system_prompt = """
-You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
-
-If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information.
-
-Answer the question in Markdown format for readability, use bullet points if possible.
-"""
-
-
-
-class LlmGenerationParameters(NamedTuple):
-    top_k: int
-    top_p: float
-    temperature: float
-    repetition_penalty: float
+from llm_connector import llm_stream_result, LlmGenerationParameters, LlmModelConfig, craft_prompt
 
 class RagParameters(NamedTuple):
     chunk_size: int
     chunk_overlap: int
     top_k: int
-
-
-
-def llm_fetch_result(prompt: str, llm_parameter: LlmGenerationParameters) -> str:
-    llm = HuggingFaceTextGenInference(
-        inference_server_url="http://localhost:15810/",
-        max_new_tokens=1024,
-        top_k=llm_parameter.top_k,
-        top_p=llm_parameter.top_p,
-        temperature=llm_parameter.temperature,
-        repetition_penalty=llm_parameter.repetition_penalty,
-    )
-    return llm.stream(prompt)
-
-
 
 def load_pdf_to_text(file_like) -> str:
     pdf_reader = PyPDF2.PdfFileReader(file_like)
@@ -145,23 +99,19 @@ def main_ui_logic():
     # React to user input
     if user_input := st.chat_input("How can I help you today?"):
 
-
-        prompt = PromptTemplate(
-            input_variables=["sys", "user"],
-            template=template,
+        # TODO: Load config from file.
+        llm_model_conf = LlmModelConfig.new_llm_config(
+            "huggingface",
+            "http://localhost:15810"
         )
 
         # TODO: Fetch parameters.
-        llm_param = LlmGenerationParameters(
+        llm_param = LlmGenerationParameters.new_generation_parameter(
             top_k=model_topk,
             top_p=model_topp,
             temperature=model_temperature,
             repetition_penalty=model_repetition_penalty,
         )
-
-        # Prompt crafting.
-        user_prompt = prompt.partial(sys=system_prompt)
-        prompt = user_prompt.format(user=user_input)
 
         # Display user message in chat message container
         st.chat_message("user").markdown(user_input)
@@ -174,8 +124,11 @@ def main_ui_logic():
             message_placeholder = st.empty()
             full_response = ""
 
+        # Prompt crafting.
+        prompt = craft_prompt(user_input)
+
         # Simulating bot typing.
-        for response in llm_fetch_result(prompt, llm_param):
+        for response in llm_stream_result(prompt, llm_model_conf, llm_param):
             if "undertale" in prompt.lower():
                 cursor = "❤️"
             else:
