@@ -1,0 +1,6 @@
+llm_models:
+  - provider: huggingface
+    endpoint: http://localhost:15810
+embedding_model:
+    provider: huggingface
+    endpoint: http://localhost:15820

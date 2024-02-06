@@ -5,8 +5,6 @@
 import io
 import random
 
-from webui_config import UiConfig
-
 import streamlit as st  # UI Framework
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -105,9 +103,13 @@ def main_ui_logic():
     # React to user input
     if user_input := st.chat_input("How can I help you today?"):
 
-        # TODO: User model selection.
-        llm_model_conf = config.llm_models[0]
+        # TODO: Load config from file.
+        llm_model_conf = LlmModelConfig.new_llm_config(
+            "huggingface",
+            "http://localhost:15810"
+        )
 
+        # TODO: Fetch parameters.
         llm_param = LlmGenerationParameters.new_generation_parameter(
             top_k=model_topk,
             top_p=model_topp,
@@ -146,8 +148,4 @@ def main_ui_logic():
 
 
 if __name__ == "__main__":
-    # Load config.
-    with open("config.yaml", "r", encoding="utf-8") as f:
-        config = UiConfig.load_config_from_file(f)
-    
     main_ui_logic()
