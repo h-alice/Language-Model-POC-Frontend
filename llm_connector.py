@@ -4,11 +4,10 @@ LLM Connector
 from typing import NamedTuple
 
 # LangChain Libraries.
-from langchain_openai import OpenAI # LangChain OpenAI Adapter
+#from langchain_openai import OpenAI # LangChain OpenAI Adapter
 from langchain.chains import LLMChain        # LangChain Library
 from langchain.prompts import PromptTemplate # LangChain Library
 from langchain_community.llms import HuggingFaceTextGenInference
-from langchain import PromptTemplate
 
 # Some prompt templates.
 
