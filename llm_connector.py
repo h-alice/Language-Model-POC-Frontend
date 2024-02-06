@@ -9,6 +9,8 @@ from langchain.chains import LLMChain        # LangChain Library
 from langchain.prompts import PromptTemplate # LangChain Library
 from langchain_community.llms import HuggingFaceTextGenInference
 
+from webui_config import LlmModelConfig
+
 # Some prompt templates.
 
 LLAMA_PROMPT_TEMPLATE = """
@@ -41,14 +43,6 @@ class LlmGenerationParameters(NamedTuple):
                    top_p=top_p, 
                    temperature=temperature, 
                    repetition_penalty=repetition_penalty)
-
-class LlmModelConfig(NamedTuple):
-    provider: str
-    endpoint: str
-    @classmethod
-    def new_llm_config(cls, model_provider: str, model_endpoint: str):
-        return cls(provider=model_provider.lower(), 
-                   endpoint=model_endpoint)
 
 #
 def llm_stream_result(prompt: str, llm_model: LlmModelConfig, llm_parameter: LlmGenerationParameters) -> str:
