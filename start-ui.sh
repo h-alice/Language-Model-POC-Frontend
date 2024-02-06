@@ -31,7 +31,7 @@ python_version_check() {
         printf "${YELLOW}Current Python version (${current_python_version}) is smaller then required version (${required_python_version}).${NC}\n"
         printf "${YELLOW}This project may not work as expected.${NC}\n\n"
     else
-        printf "${CYAN}Current Python version: ${current_python_version} ${NC}\n"
+        printf "${CYAN}Current Python version: ${YELLOW}${current_python_version} ${NC}\n"
     fi
     return 0
 }
@@ -101,11 +101,11 @@ fi
 
 # Install requirement.
 printf "\n${CYAN}Checking package installation...${NC}\n"
-pip install -q -r requirements.txt
+pip install --disable-pip-version-check -q -r requirements.txt
 
 printf "\n${GREEN}Environment integrity checked, starting webui.${NC}\n"
 
-streamlit run webui.py --server.address "0.0.0.0"
+streamlit run webui.py --browser.gatherUsageStats False --server.address "0.0.0.0"
 
 
 
