@@ -42,7 +42,7 @@ class UiConfig:
     def __init__(self, config: dict):
 
         # Initialize embedding_model attribute as None.
-        self.embedding_model: Union[EmbeddingModelConfig, None] = None
+        self.embedding_model: EmbeddingModelConfig
 
         # Get embedding model configuration from the input dictionary.
         _embedding_model_config = config.get("embedding_model", None)
@@ -60,6 +60,8 @@ class UiConfig:
         # Loop through each LLM configuration and create LlmModelConfig instances.
         for _llm in _llm_config:
             self.llm_models.append(LlmModelConfig.new_llm_config(_llm))
+
+        self.document_folder: str = config.get("document-folder", "doc")
         
     # Method to load UI configuration from a file
     @classmethod

@@ -5,3 +5,5 @@ PyPDF2
 langchain
 streamlit
 text_generation
+faiss-cpu 
+tiktoken

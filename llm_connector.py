@@ -1,7 +1,8 @@
 """
 LLM Connector
 """
-from typing import NamedTuple
+from typing import NamedTuple, List
+from langchain_core.documents.base import Document
 
 # LangChain Libraries.
 #from langchain_openai import OpenAI # LangChain OpenAI Adapter
@@ -9,13 +10,15 @@ from langchain.chains import LLMChain        # LangChain Library
 from langchain.prompts import PromptTemplate # LangChain Library
 from langchain_community.llms import HuggingFaceTextGenInference
 
+from webui_config import LlmModelConfig
+
 # Some prompt templates.
 
 LLAMA_PROMPT_TEMPLATE = """
 <s>[INST] <<SYS>>
 {sys}
 <</SYS>>
- 
+{rag}
 {user} [/INST]
 """
 
@@ -25,6 +28,13 @@ You are a helpful, respectful and honest assistant. Always answer as helpfully a
 If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information.
 
 Answer the question in Markdown format for readability, use bullet points if possible.
+"""
+
+RAG_STUB = """
+If there is nothing in the context relevant to the question at hand, just resuse to answer it. Don't try to make up an answer.
+
+Anything between the following `context` html blocks is retrieved from a knowledge bank, not part of the conversation with the user. 
+
 """
 
 #
@@ -42,14 +52,6 @@ class LlmGenerationParameters(NamedTuple):
                    temperature=temperature, 
                    repetition_penalty=repetition_penalty)
 
-class LlmModelConfig(NamedTuple):
-    provider: str
-    endpoint: str
-    @classmethod
-    def new_llm_config(cls, model_provider: str, model_endpoint: str):
-        return cls(provider=model_provider.lower(), 
-                   endpoint=model_endpoint)
-
 #
 def llm_stream_result(prompt: str, llm_model: LlmModelConfig, llm_parameter: LlmGenerationParameters) -> str:
     if llm_model.provider.lower() == "huggingface":
@@ -65,12 +67,19 @@ def llm_stream_result(prompt: str, llm_model: LlmModelConfig, llm_parameter: Llm
         raise NotImplemented("May implement someday lol.")
     return llm.stream(prompt)
 
-def craft_prompt(user_input):
+def craft_prompt(user_input, rag_content: List[Document]=[]):
     prompt = PromptTemplate(
         input_variables=["sys", "user"],
         template=LLAMA_PROMPT_TEMPLATE,  # TODO: Ability to switch prompt templates.
+        partial_variables={"rag": ""},
         )
     # Prompt crafting.
     user_prompt = prompt.partial(sys=SAMPLE_SYS_PROMPT)  # TODO: User defined system prompt.
+
+    if rag_content:
+        rag_documents = "\n".join([x.page_content for x in rag_content])
+        rag_prompt = RAG_STUB + f"<context>\n{rag_documents}\n</context>\n"
+        user_prompt = user_prompt.partial(rag=rag_prompt)
+        
     prompt = user_prompt.format(user=user_input) 
     return prompt

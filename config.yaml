@@ -1,6 +1,7 @@
 llm_models:
   - provider: huggingface
-    endpoint: http://localhost:15810
+    endpoint: http://127.0.0.1:15810
 embedding_model:
     provider: huggingface
-    endpoint: http://localhost:15820
+    endpoint: http://127.0.0.1:15820
+document-folder: "doc"

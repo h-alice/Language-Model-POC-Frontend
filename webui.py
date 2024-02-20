@@ -2,49 +2,30 @@
 # Chatbot User Interface #
 ##########################
 
-import io
-import random
+# Python Standard Library Imports
+import io  # Input/Output operations
+import random  # Random number generation
+import uuid  # Universally Unique Identifier generation
+from pathlib import Path  # Handling file system paths
+from typing import NamedTuple  # Type hinting for named tuples
 
-import streamlit as st  # UI Framework
+# Third-Party Library Imports
+import PyPDF2  # PDF manipulation library
+import streamlit as st  # UI Framework for creating web applications
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+# Local Imports
+from webui_config import UiConfig  # Configuration settings for the web UI
+from llm_connector import llm_stream_result, LlmGenerationParameters, craft_prompt
+from document_rag_processor import topk_documents, RagParameters
 
-from typing import NamedTuple
-
-import PyPDF2
-
-
-from typing import NamedTuple
-
-from llm_connector import llm_stream_result, LlmGenerationParameters, LlmModelConfig, craft_prompt
-
-# TODO: Refactor, extract document processing logic.
-class RagParameters(NamedTuple):
-    chunk_size: int
-    chunk_overlap: int
-    top_k: int
-
-# TODO: Refactor, extract document processing logic.
-def load_pdf_to_text(file_like) -> str:
-    pdf_reader = PyPDF2.PdfFileReader(file_like)
-    full_text = ""
-    # Get the total number of pages in the PDF
-    num_pages = pdf_reader.numPages
-    for i in range(num_pages):
-        page = pdf_reader.getPage(i)
-        text = page.extractText()
-        full_text += text
-    return full_text
-
-# TODO: Refactor, extract document processing logic.
-def text_splitter(text: str, chunk_size=100, chunk_overlap=5):
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-    all_splits = text_splitter.create_documents([text])
-    return all_splits
-
-def main_ui_logic():
+def main_ui_logic(config: UiConfig):
 
     st.title("Chatbot Interface")
+
+    ### Environment prepare.
+    document_folder = Path(config.document_folder)
+    # TODO: Logger: display warning.
+    document_folder.mkdir(exist_ok=True)
 
     ### States
     if "messages" not in st.session_state:
@@ -52,6 +33,10 @@ def main_ui_logic():
 
     if "documents" not in st.session_state:
         st.session_state.documents = []
+
+    if "session_id" not in st.session_state:
+        # Generate user session identifier.
+        st.session_state.session_id = uuid.uuid4().hex
 
     ### Components
 
@@ -78,22 +63,25 @@ def main_ui_logic():
         # TODO: Refactor, extract document processing logic.
         st.markdown("### RAG Settings")
         rag_chunk_size = st.slider("Chunk Size", 0, 500, 100, key="rag_chunk_size")
-        rag_chunk_overlap = st.slider("Chunk Overlap", 0, 100, 5, key="rag_chunk_overlap")
-        rag_topk = st.slider("Top K", 0, 100, 5, key="rag_topk")
+        rag_chunk_overlap = st.slider("Chunk Overlap", 0, 100, 25, key="rag_chunk_overlap")
+        rag_topk = st.slider("Top K", 0, 100, 3, key="rag_topk")
 
 
     # File upload interface
     with st.expander("文件上傳"):
-        uploaded_file = st.file_uploader("Choose a file")
+        uploaded_files = st.file_uploader("Choose a file", accept_multiple_files=True)
 
-        if uploaded_file is not None:
-            print(uploaded_file)
-            bytes_data = uploaded_file.getvalue()
-            reader = io.BytesIO(bytes_data)
-            full_text = load_pdf_to_text(reader)
-            split_text = text_splitter(full_text)
-            print(split_text)
-            st.session_state.documents += split_text
+        if uploaded_files is not None:
+
+            all_document_full_names = []
+            for _file in uploaded_files:
+                file_full_name = f"{st.session_state.session_id}-{_file.name}"  # Create file name.
+                bytes_data = _file.getvalue() # Get raw data.
+                doc_output = document_folder / file_full_name # Destination file.
+                doc_output.write_bytes(bytes_data) # Write file to document folder.
+                all_document_full_names.append(doc_output.absolute()) # Append current file to list.
+
+            st.session_state.documents = all_document_full_names
 
     # Display chat messages from history on app rerun
     for message in st.session_state.messages:
@@ -103,18 +91,21 @@ def main_ui_logic():
     # React to user input
     if user_input := st.chat_input("How can I help you today?"):
 
-        # TODO: Load config from file.
-        llm_model_conf = LlmModelConfig.new_llm_config(
-            "huggingface",
-            "http://localhost:15810"
-        )
+        # TODO: User model selection.
+        llm_model_conf = config.llm_models[0]
+        embedding_conf = config.embedding_model
 
-        # TODO: Fetch parameters.
         llm_param = LlmGenerationParameters.new_generation_parameter(
             top_k=model_topk,
             top_p=model_topp,
             temperature=model_temperature,
             repetition_penalty=model_repetition_penalty,
+        )
+
+        rag_param = RagParameters.new_rag_parameter(
+            chunk_size=rag_chunk_size,
+            chunk_overlap=rag_chunk_overlap,
+            top_k=rag_topk,
         )
 
         # Display user message in chat message container
@@ -128,8 +119,22 @@ def main_ui_logic():
             message_placeholder = st.empty()
             full_response = ""
 
+        ## RAG     
+        rag_docs = []
+        if st.session_state["documents"]:   # Document list is not null, invoke RAG.
+            topk_doc_score = topk_documents(user_input, embedding_conf, rag_param, st.session_state["documents"])
+            rag_docs = [x for x, _ in topk_doc_score]
+            rag_reference = ""
+            for d, score in topk_doc_score:
+                rag_reference += "```\n"
+                rag_reference += d.page_content
+                rag_reference += "\n"
+                rag_reference += "```\n"
+            with st.expander("參考文件 Referenced Document"):
+                st.markdown(rag_reference)
+
         # Prompt crafting.
-        prompt = craft_prompt(user_input)
+        prompt = craft_prompt(user_input, rag_docs)
 
         # Simulating bot typing.
         for response in llm_stream_result(prompt, llm_model_conf, llm_param):
@@ -148,4 +153,8 @@ def main_ui_logic():
 
 
 if __name__ == "__main__":
-    main_ui_logic()
+    # Load config.
+    with open("config.yaml", "r", encoding="utf-8") as f:
+        config = UiConfig.load_config_from_file(f)
+    
+    main_ui_logic(config=config)
