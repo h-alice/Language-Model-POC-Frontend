@@ -20,7 +20,7 @@ from document_rag_processor import topk_documents, RagParameters
 
 def main_ui_logic(config: UiConfig):
 
-    st.title("Chatbot Interface")
+    st.title("LMPoC Chatbot Interface")
 
     ### Environment prepare.
     document_folder = Path(config.document_folder)
@@ -153,6 +153,9 @@ def main_ui_logic(config: UiConfig):
 
 
 if __name__ == "__main__":
+
+    st.set_page_config(page_title="LMPoC Chat Interface")
+
     # Load config.
     with open("config.yaml", "r", encoding="utf-8") as f:
         config = UiConfig.load_config_from_file(f)
