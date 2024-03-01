@@ -1,5 +1,18 @@
 #!/bin/bash
 
+## Constants
+
+# Certificate information
+COMMON_NAME="lmpoc.taipei"
+ORGANIZATION_NAME="Taipei City Government"
+ORGANIZATIONAL_UNIT="Department of Information Technology"
+LOCALITY="Taipei"
+STATE="Taiwan"
+COUNTRY_CODE="TW"
+
+# Output folder for certificate and private key
+OUTPUT_FOLDER=".cert"
+
 # Define colors for terminal output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -111,7 +124,33 @@ pip install --disable-pip-version-check -q -r requirements.txt
 
 printf "\n${GREEN}[+] Environment integrity checked, starting webui.${NC}\n"
 
-streamlit run webui.py --browser.gatherUsageStats False --server.address "0.0.0.0"
+## Certification
+
+# Check if certificate and private key already exist
+if [ -f "$OUTPUT_FOLDER/webapp-selfsigned.crt" ] && [ -f "$OUTPUT_FOLDER/webapp-selfsigned.key" ]; then
+    printf "${CYAN}[*] Certificate and private key already exist. Skipping self-signed certificate creation.${NC}\n\n"
+    
+else
+    printf "${CYAN}[*] Creating self-signed certificate.${NC}\n\n"
+    # Create output folder if it doesn't exist
+    mkdir -p "$OUTPUT_FOLDER"
+    echo "*" > "$OUTPUT_FOLDER"/.gitignore
+
+    # Generate private key using ECDSA
+    openssl ecparam -name prime256v1 -genkey -noout -out "$OUTPUT_FOLDER/webapp-selfsigned.key"
+
+    # Generate certificate signing request (CSR)
+    openssl req -new -key "$OUTPUT_FOLDER/webapp-selfsigned.key" -out "$OUTPUT_FOLDER/webapp-selfsigned.csr" -subj "/C=${COUNTRY_CODE}/ST=${STATE}/L=${LOCALITY}/O=${ORGANIZATION_NAME}/OU=${ORGANIZATIONAL_UNIT}/CN=${COMMON_NAME}"
+
+    # Generate self-signed certificate
+    openssl x509 -req -days 365 -in "$OUTPUT_FOLDER/webapp-selfsigned.csr" -signkey "$OUTPUT_FOLDER/webapp-selfsigned.key" -out "$OUTPUT_FOLDER/webapp-selfsigned.crt"
+
+    # Output success message
+    printf "${GREEN}[+] Certificate and private key generated successfully.${NC}\n\n"
+
+fi
+
+streamlit run webui.py --browser.gatherUsageStats False --server.address "0.0.0.0" --server.port "443" --server.sslCertFile .cert/webapp-selfsigned.crt --server.sslKeyFile .cert/webapp-selfsigned.key
 
 
 
