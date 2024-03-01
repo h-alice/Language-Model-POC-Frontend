@@ -1,13 +1,11 @@
-from PyPDF2 import PdfReader
 from pathlib import Path
 from typing import List, NamedTuple, IO, Tuple
-from io import BytesIO
-from langchain.text_splitter import RecursiveCharacterTextSplitter  # Text splitting utility
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents.base import Document
 from webui_config import EmbeddingModelConfig
 
+from doc_parser import create_paeser
 MAX_EMBEDDING_BATCH_SIZE = 32 # Hard limit for embedding batch size.
 
 class RagParameters(NamedTuple):
@@ -20,22 +18,6 @@ class RagParameters(NamedTuple):
                    chunk_overlap=chunk_overlap, 
                    top_k=top_k)
 
-def load_pdf_to_text(file_like: IO[bytes]) -> List[str]:
-    pdf_reader = PdfReader(file_like)
-    all_pages = []
-    # Get the total number of pages in the PDF
-    num_pages = len(pdf_reader.pages)
-    for i in range(num_pages):
-        page = pdf_reader.pages[i]
-        text = page.extract_text()
-        all_pages.append(text)
-    return all_pages
-
-def split_document(rag_param: RagParameters, document_content: List[str]) -> List[Document]:
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=rag_param.chunk_size, chunk_overlap=rag_param.chunk_overlap)
-    all_splits = text_splitter.create_documents(document_content)
-    return all_splits
-
 def topk_documents(query: str, embedding_config: EmbeddingModelConfig, rag_param: RagParameters, document_path_list:List[str]) -> List[Tuple[Document, float]]:
 
     if embedding_config.provider.lower() != "huggingface": raise NotImplemented
@@ -45,8 +27,9 @@ def topk_documents(query: str, embedding_config: EmbeddingModelConfig, rag_param
 
     # Load all document.
     for file_path in document_path_list:
-        with open(file_path, "rb") as f:
-            all_document += split_document(rag_param=rag_param, document_content=load_pdf_to_text(f))
+        p = create_paeser(file_path)
+        document_chunks = p.parse(chunk_size=rag_param.chunk_size, chunk_overlap=rag_param.chunk_overlap)
+        all_document += document_chunks
 
     # Retrive top-k document segments.
     embeddings = HuggingFaceInferenceAPIEmbeddings(
