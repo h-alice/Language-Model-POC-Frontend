@@ -116,7 +116,7 @@ def main_ui_logic(config: UiConfig):
         streamlit_feedback(feedback_type="thumbs",
                                             on_submit=feedback_callback(None, None),
                                             optional_text_label="[Optional] Please provide your feedback.",
-                                            key=f"feedback_placeholder_{uuid.uuid4().hex}")
+                                            key=f"feedback_placeholder_{int(len(st.session_state.messages)/2)}")
 
     # React to user input
     if user_input := st.chat_input("How can I help you today?"):
@@ -181,7 +181,7 @@ def main_ui_logic(config: UiConfig):
         streamlit_feedback(feedback_type="thumbs",
                                         on_submit=feedback_callback(user_input, full_response),
                                         optional_text_label="[可選] 提供您的Feedback",
-                                        key=f"feedback_{uuid.uuid4().hex}"
+                                        key=f"feedback_{int(len(st.session_state.messages)/2)}"
         )
 
         # Add assistant response to chat history
