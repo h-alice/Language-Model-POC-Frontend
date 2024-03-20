@@ -112,11 +112,11 @@ def main_ui_logic(config: UiConfig):
     # HACK: This is a strange solution to handle StreamLit internal states.
     #      If we don't add the feedback widget here, it simply doesn't work (callback won't be fired).
     #      I haven't trace the internal source code yet, but we may figure out some better solutions.
-    if len(st.session_state.messages) >= 2:
+    if len(st.session_state.messages) >= 1:
         streamlit_feedback(feedback_type="thumbs",
                                             on_submit=feedback_callback(st.session_state.messages[-2], st.session_state.messages[-1]),
-                                            optional_text_label="[Optional] Please provide your feedback.",
-                                            key=f"feedback_placeholder_{int(len(st.session_state.messages)/2)}")
+                                            optional_text_label="[可選] 提供您的Feedback",
+                                            key=f"feedback_{int(len(st.session_state.messages)) // 2}")
 
     # React to user input
     if user_input := st.chat_input("How can I help you today?"):
@@ -178,14 +178,9 @@ def main_ui_logic(config: UiConfig):
         # While complete, display full bot response.
         message_placeholder.markdown(full_response)
 
-        streamlit_feedback(feedback_type="thumbs",
-                                        on_submit=feedback_callback(user_input, full_response),
-                                        optional_text_label="[可選] 提供您的Feedback",
-                                        key=f"feedback_{int(len(st.session_state.messages)/2)}"
-        )
-
         # Add assistant response to chat history
         st.session_state.messages.append({"role": "assistant", "content": full_response})
+        st.rerun()
 
 
 if __name__ == "__main__":
