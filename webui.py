@@ -41,7 +41,7 @@ def feedback_callback(user_prompt, response):
 
 def main_ui_logic(config: UiConfig):
 
-    st.title("LMPoC Chatbot Interface")
+    st.title("🎓LMPoC 大語言模型對話介面")
 
     ### Environment prepare.
     document_folder = Path(config.document_folder)
@@ -63,7 +63,7 @@ def main_ui_logic(config: UiConfig):
 
 
     with st.sidebar:
-        st.markdown("# General Settings")
+        st.markdown("# 參數設定")
         with st.expander("參數說明"):
             st.markdown("### LLM Generation Parameter")
             st.markdown("Top K: 保留機率最高的前 K 個字")
@@ -78,7 +78,7 @@ def main_ui_logic(config: UiConfig):
         st.markdown("### LLM Generation Parameter")
         model_topk = st.slider("Top K", 0, 200, 10, key="model_topk")
         model_topp = st.slider("Top P", 0.0, 1.0, 0.9, key="model_topp")
-        model_temperature = st.slider("Temperature", 0.0, 1.0, 0.01, key="model_temperature")
+        model_temperature = st.slider("Temperature", 0.0, 1.0, 0.05, key="model_temperature")
         model_repetition_penalty = st.slider("Repetition Penalty", 0.0, 2.0, 1.10, key="model_repetition_penalty")
 
         # TODO: Refactor, extract document processing logic.
