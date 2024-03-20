@@ -12,3 +12,4 @@ networkx
 openpyxl
 python-pptx
 odfpy
+streamlit-feedback
