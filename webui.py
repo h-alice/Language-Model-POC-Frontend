@@ -19,21 +19,25 @@ from webui_config import UiConfig  # Configuration settings for the web UI
 from llm_connector import llm_stream_result, LlmGenerationParameters, craft_prompt
 from document_rag_processor import topk_documents, RagParameters
 
-def feedback_callback(*args, **kwargs):
-    
 
-    feedback_type = kwargs.get("type")
-    feedback_score = kwargs.get("score")
-    feedback_text = kwargs.get("text")
+def feedback_callback(user_prompt, response):
+    def inner(*args):
 
-    if feedback_type == "thumbs":
-        if feedback_score == "👍":
-            feedback_score = 1
-        elif feedback_score == "👎":
-            feedback_score = 0
-    else:
-        raise NotImplementedError(f"Feedback type {feedback_type} is not supported.")
-    print("feedback_callback", feedback_type, feedback_score, feedback_text)
+        feedback_info = args[0]
+        feedback_type = feedback_info.get("type")
+        feedback_score = feedback_info.get("score")
+        feedback_text = feedback_info.get("text")
+
+        if feedback_type == "thumbs":
+            if feedback_score == "👍":
+                feedback_score = 1
+            elif feedback_score == "👎":
+                feedback_score = 0
+        else:
+            raise NotImplementedError(f"Feedback type {feedback_type} is not supported.")
+        print("feedback_callback", user_prompt, response, feedback_type, feedback_score, feedback_text)
+
+    return inner
 
 def main_ui_logic(config: UiConfig):
 
@@ -110,9 +114,9 @@ def main_ui_logic(config: UiConfig):
     #      I haven't trace the internal source code yet, but we may figure out some better solutions.
     if len(st.session_state.messages) > 0:
         streamlit_feedback(feedback_type="thumbs",
-                                            on_submit=feedback_callback,
+                                            on_submit=feedback_callback(None, None),
                                             optional_text_label="[Optional] Please provide your feedback.",
-                                            key=f"feedback_{int(len(st.session_state.messages)/2)}")
+                                            key=f"feedback_placeholder_{uuid.uuid4().hex}")
 
     # React to user input
     if user_input := st.chat_input("How can I help you today?"):
@@ -175,9 +179,9 @@ def main_ui_logic(config: UiConfig):
         message_placeholder.markdown(full_response)
 
         streamlit_feedback(feedback_type="thumbs",
-                                        on_submit=feedback_callback,
+                                        on_submit=feedback_callback(user_input, full_response),
                                         optional_text_label="[可選] 提供您的Feedback",
-                                        key=f"feedback_{int(len(st.session_state.messages)/2)}"
+                                        key=f"feedback_{uuid.uuid4().hex}"
         )
 
         # Add assistant response to chat history
