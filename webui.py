@@ -12,11 +12,28 @@ from typing import NamedTuple  # Type hinting for named tuples
 # Third-Party Library Imports
 import PyPDF2  # PDF manipulation library
 import streamlit as st  # UI Framework for creating web applications
+from streamlit_feedback import streamlit_feedback # Feedback widget for Streamlit
 
 # Local Imports
 from webui_config import UiConfig  # Configuration settings for the web UI
 from llm_connector import llm_stream_result, LlmGenerationParameters, craft_prompt
 from document_rag_processor import topk_documents, RagParameters
+
+def feedback_callback(*args, **kwargs):
+    
+
+    feedback_type = kwargs.get("type")
+    feedback_score = kwargs.get("score")
+    feedback_text = kwargs.get("text")
+
+    if feedback_type == "thumbs":
+        if feedback_score == "👍":
+            feedback_score = 1
+        elif feedback_score == "👎":
+            feedback_score = 0
+    else:
+        raise NotImplementedError(f"Feedback type {feedback_type} is not supported.")
+    print("feedback_callback", feedback_type, feedback_score, feedback_text)
 
 def main_ui_logic(config: UiConfig):
 
@@ -88,6 +105,15 @@ def main_ui_logic(config: UiConfig):
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
+    # HACK: This is a strange solution to handle StreamLit internal states.
+    #      If we don't add the feedback widget here, it simply doesn't work (callback won't be fired).
+    #      I haven't trace the internal source code yet, but we may figure out some better solutions.
+    if len(st.session_state.messages) > 0:
+        streamlit_feedback(feedback_type="thumbs",
+                                            on_submit=feedback_callback,
+                                            optional_text_label="[Optional] Please provide your feedback.",
+                                            key=f"feedback_{int(len(st.session_state.messages)/2)}")
+
     # React to user input
     if user_input := st.chat_input("How can I help you today?"):
 
@@ -147,6 +173,12 @@ def main_ui_logic(config: UiConfig):
 
         # While complete, display full bot response.
         message_placeholder.markdown(full_response)
+
+        streamlit_feedback(feedback_type="thumbs",
+                                        on_submit=feedback_callback,
+                                        optional_text_label="[可選] 提供您的Feedback",
+                                        key=f"feedback_{int(len(st.session_state.messages)/2)}"
+        )
 
         # Add assistant response to chat history
         st.session_state.messages.append({"role": "assistant", "content": full_response})
