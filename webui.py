@@ -112,9 +112,9 @@ def main_ui_logic(config: UiConfig):
     # HACK: This is a strange solution to handle StreamLit internal states.
     #      If we don't add the feedback widget here, it simply doesn't work (callback won't be fired).
     #      I haven't trace the internal source code yet, but we may figure out some better solutions.
-    if len(st.session_state.messages) > 0:
+    if len(st.session_state.messages) >= 2:
         streamlit_feedback(feedback_type="thumbs",
-                                            on_submit=feedback_callback(None, None),
+                                            on_submit=feedback_callback(st.session_state.messages[-2], st.session_state.messages[-1]),
                                             optional_text_label="[Optional] Please provide your feedback.",
                                             key=f"feedback_placeholder_{int(len(st.session_state.messages)/2)}")
 
