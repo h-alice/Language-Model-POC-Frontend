@@ -55,6 +55,9 @@ def main_ui_logic(config: UiConfig):
     if "documents" not in st.session_state:
         st.session_state.documents = []
 
+    if "rag_reference" not in st.session_state:
+        st.session_state.rag_reference = ""
+
     if "session_id" not in st.session_state:
         # Generate user session identifier.
         st.session_state.session_id = uuid.uuid4().hex
@@ -160,8 +163,9 @@ def main_ui_logic(config: UiConfig):
                 rag_reference += d.page_content
                 rag_reference += "\n"
                 rag_reference += "```\n"
-            with st.expander("參考文件 Referenced Document"):
-                st.markdown(rag_reference)
+                st.session_state.rag_reference = rag_reference
+        else:
+            st.session_state.rag_reference = ""
 
         # Prompt crafting.
         prompt = craft_prompt(user_input, rag_docs)
@@ -181,6 +185,10 @@ def main_ui_logic(config: UiConfig):
         # Add assistant response to chat history
         st.session_state.messages.append({"role": "assistant", "content": full_response})
         st.rerun()
+    
+    if st.session_state.rag_reference:
+        with st.expander("參考文件 Referenced Document"):
+            st.markdown(st.session_state.rag_reference)
 
 
 if __name__ == "__main__":
