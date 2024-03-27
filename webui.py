@@ -185,7 +185,7 @@ def main_ui_logic(config: UiConfig):
 
 if __name__ == "__main__":
 
-    st.set_page_config(page_title="LMPoC Chat Interface")
+    st.set_page_config(page_title="LMPoC 對話介面")
 
     # Load config.
     with open("config.yaml", "r", encoding="utf-8") as f:
