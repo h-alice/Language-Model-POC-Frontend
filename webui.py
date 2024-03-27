@@ -78,14 +78,14 @@ def main_ui_logic(config: UiConfig):
             st.markdown("Chunk Overlap: 文章分割的重疊大小")
             st.markdown("Top K: 保留機率最高的前 K 個文章")
 
-        st.markdown("### LLM Generation Parameter")
+        st.markdown("### LLM 生成參數")
         model_topk = st.slider("Top K", 0, 200, 10, key="model_topk")
         model_topp = st.slider("Top P", 0.0, 1.0, 0.9, key="model_topp")
         model_temperature = st.slider("Temperature", 0.0, 1.0, 0.05, key="model_temperature")
         model_repetition_penalty = st.slider("Repetition Penalty", 0.0, 2.0, 1.10, key="model_repetition_penalty")
 
         # TODO: Refactor, extract document processing logic.
-        st.markdown("### RAG Settings")
+        st.markdown("### RAG 設置")
         rag_chunk_size = st.slider("Chunk Size", 0, 500, 100, key="rag_chunk_size")
         rag_chunk_overlap = st.slider("Chunk Overlap", 0, 100, 25, key="rag_chunk_overlap")
         rag_topk = st.slider("Top K", 0, 100, 3, key="rag_topk")
@@ -93,7 +93,7 @@ def main_ui_logic(config: UiConfig):
 
     # File upload interface
     with st.expander("文件上傳"):
-        uploaded_files = st.file_uploader("Choose a file", accept_multiple_files=True)
+        uploaded_files = st.file_uploader("選擇參考文件(.pdf .odt .docx .pptx .xlsx)", accept_multiple_files=True)
 
         if uploaded_files is not None:
 
@@ -118,7 +118,7 @@ def main_ui_logic(config: UiConfig):
     if len(st.session_state.messages) >= 1:
         streamlit_feedback(feedback_type="thumbs",
                                             on_submit=feedback_callback(st.session_state.messages[-2], st.session_state.messages[-1]),
-                                            optional_text_label="[可選] 提供您的Feedback",
+                                            optional_text_label="[可選] 提供您的回饋或建議",
                                             key=f"feedback_{int(len(st.session_state.messages)) // 2}")
 
     # React to user input
