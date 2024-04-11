@@ -4,7 +4,7 @@ docker run --gpus all \
            -v /home/q36862/data:/data \
            -v /home/q36862/model_repos:/models ghcr.io/huggingface/text-generation-inference:1.3 \
            --model-id /models/M7 \
-           --max-concurrent-requests 1 \
+           --max-concurrent-requests 4 \
            --max-total-tokens 4096 \
            --max-input-length 2048 \
            --num-shard 1 \
