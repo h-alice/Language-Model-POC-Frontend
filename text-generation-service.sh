@@ -1,0 +1,11 @@
+docker run --gpus all \
+           --shm-size 1g \
+           -p 15810:80 \
+           -v /home/q36862/data:/data \
+           -v /home/q36862/model_repos:/models ghcr.io/huggingface/text-generation-inference:1.3 \
+           --model-id /models/M7 \
+           --max-concurrent-requests 1 \
+           --max-total-tokens 4096 \
+           --max-input-length 2048 \
+           --num-shard 1 \
+           --quantize bitsandbytes-nf4
