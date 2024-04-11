@@ -10,6 +10,9 @@ from langchain.chains import LLMChain        # LangChain Library
 from langchain.prompts import PromptTemplate # LangChain Library
 from langchain_community.llms import HuggingFaceTextGenInference
 
+# Text generation inference APIs.
+import text_generation
+
 from webui_config import LlmModelConfig
 
 # Some prompt templates.
@@ -30,7 +33,7 @@ If a question does not make any sense, or is not factually coherent, explain why
 Answer the question in Markdown format for readability, use bullet points if possible.
 """
 
-RAG_STUB = """
+RAG_STEM = """
 If there is nothing in the context relevant to the question at hand, just resuse to answer it. Don't try to make up an answer.
 
 Anything between the following `context` html blocks is retrieved from a knowledge bank, not part of the conversation with the user. 
@@ -78,7 +81,7 @@ def craft_prompt(user_input, rag_content: List[Document]=[]):
 
     if rag_content:
         rag_documents = "\n".join([x.page_content for x in rag_content])
-        rag_prompt = RAG_STUB + f"<context>\n{rag_documents}\n</context>\n"
+        rag_prompt = RAG_STEM + f"<context>\n{rag_documents}\n</context>\n"
         user_prompt = user_prompt.partial(rag=rag_prompt)
         
     prompt = user_prompt.format(user=user_input) 
