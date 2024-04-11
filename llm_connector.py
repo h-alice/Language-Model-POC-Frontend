@@ -10,8 +10,11 @@ from langchain.chains import LLMChain        # LangChain Library
 from langchain.prompts import PromptTemplate # LangChain Library
 from langchain_community.llms import HuggingFaceTextGenInference
 
+import time
+
 # Text generation inference APIs.
 import text_generation
+import text_generation.errors
 
 from webui_config import LlmModelConfig
 
@@ -56,7 +59,7 @@ class LlmGenerationParameters(NamedTuple):
                    repetition_penalty=repetition_penalty)
 
 #
-def llm_stream_result(prompt: str, llm_model: LlmModelConfig, llm_parameter: LlmGenerationParameters) -> str:
+def llm_stream_result(prompt: str, llm_model: LlmModelConfig, llm_parameter: LlmGenerationParameters):
     if llm_model.provider.lower() == "huggingface":
         llm = HuggingFaceTextGenInference(
             inference_server_url=llm_model.endpoint,
@@ -65,10 +68,19 @@ def llm_stream_result(prompt: str, llm_model: LlmModelConfig, llm_parameter: Llm
             top_p=llm_parameter.top_p,
             temperature=llm_parameter.temperature,
             repetition_penalty=llm_parameter.repetition_penalty,
-        )
+        )                
     else:
         raise NotImplemented("May implement someday lol.")
-    return llm.stream(prompt)
+    
+    def streamer():
+        while True:
+            try:
+                for token in llm.stream(prompt):
+                    yield token
+                break
+            except text_generation.errors.OverloadedError:
+                time.sleep(5)
+    return streamer()
 
 def craft_prompt(user_input, rag_content: List[Document]=[]):
     prompt = PromptTemplate(

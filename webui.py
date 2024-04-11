@@ -172,10 +172,7 @@ def main_ui_logic(config: UiConfig):
 
         # Simulating bot typing.
         for response in llm_stream_result(prompt, llm_model_conf, llm_param):
-            if "undertale" in prompt.lower():
-                cursor = "❤️"
-            else:
-                cursor = "❖"
+            cursor = "❖"
             full_response += (response or "")
             message_placeholder.markdown(full_response + cursor)
 
