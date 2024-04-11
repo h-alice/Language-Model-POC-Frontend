@@ -60,6 +60,7 @@ class LlmGenerationParameters(NamedTuple):
 
 #
 def llm_stream_result(prompt: str, llm_model: LlmModelConfig, llm_parameter: LlmGenerationParameters):
+    # Check LLM service provider.
     if llm_model.provider.lower() == "huggingface":
         llm = HuggingFaceTextGenInference(
             inference_server_url=llm_model.endpoint,
@@ -72,15 +73,19 @@ def llm_stream_result(prompt: str, llm_model: LlmModelConfig, llm_parameter: Llm
     else:
         raise NotImplemented("May implement someday lol.")
     
+    # This is the broker function that handles the limit of concurrent requests.
     def streamer():
-        while True:
+        
+        while True: # Retry on overload.
             try:
+                # If we get the resource, we can start streaming.
                 for token in llm.stream(prompt):
                     yield token
                 break
-            except text_generation.errors.OverloadedError:
-                time.sleep(5)
-    return streamer()
+            except text_generation.errors.OverloadedError: # Overload error.
+                time.sleep(5) # Wait for 5 seconds and continue.
+                continue
+    return streamer() # Return the generator.
 
 def craft_prompt(user_input, rag_content: List[Document]=[]):
     prompt = PromptTemplate(
