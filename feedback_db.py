@@ -38,18 +38,4 @@ Base.metadata.create_all(engine)
 
 if __name__ == "__main__":
 
-    # Insert a user feedback
-    feedback_insert(1, "Great job!", "Hello, how are you?", "I'm fine, thank you!")
-    feedback_insert(0, "Not good.", "Why is the sky blue?", "Because I don't know.")
-
-
-    # Create a session
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    # Query the database
-    for user in session.query(UserFeedback):
-        print(user.id, user.feedback, user.feedback_text, user.user_prompt, user.response)
-
-    # Close the session
-    session.close()
+    pass
