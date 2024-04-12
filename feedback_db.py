@@ -8,6 +8,7 @@ Base = declarative_base()
 
 # Define the User model class
 class UserFeedback(Base):
+    __tablename__ = "user_feedback"
     id = Column(Integer, primary_key=True)        # Auto-incrementing unique ID
     feedback = Column(Integer, nullable=False)    # Feedback, 0 if negative, 1 if positive.
     feedback_text = Column(String, nullable=True) # The feedback from user.
@@ -49,3 +50,6 @@ if __name__ == "__main__":
     # Query the database
     for user in session.query(UserFeedback):
         print(user.id, user.feedback, user.feedback_text, user.user_prompt, user.response)
+
+    # Close the session
+    session.close()
