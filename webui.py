@@ -15,6 +15,8 @@ from webui_config import UiConfig  # Configuration settings for the web UI
 from llm_connector import llm_stream_result, LlmGenerationParameters, craft_prompt
 from document_rag_processor import topk_documents, RagParameters
 
+from feedback_db import feedback_insert
+
 
 def feedback_callback(user_prompt, response):
     def inner(*args):
@@ -31,7 +33,8 @@ def feedback_callback(user_prompt, response):
                 feedback_score = 0
         else:
             raise NotImplementedError(f"Feedback type {feedback_type} is not supported.")
-        print("feedback_callback", user_prompt, response, feedback_type, feedback_score, feedback_text)
+
+        feedback_insert(feedback_score, feedback_text, user_prompt, response)
 
     return inner
 
