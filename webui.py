@@ -3,14 +3,10 @@
 ##########################
 
 # Python Standard Library Imports
-import io  # Input/Output operations
-import random  # Random number generation
 import uuid  # Universally Unique Identifier generation
 from pathlib import Path  # Handling file system paths
-from typing import NamedTuple  # Type hinting for named tuples
 
 # Third-Party Library Imports
-import PyPDF2  # PDF manipulation library
 import streamlit as st  # UI Framework for creating web applications
 from streamlit_feedback import streamlit_feedback # Feedback widget for Streamlit
 
@@ -18,6 +14,8 @@ from streamlit_feedback import streamlit_feedback # Feedback widget for Streamli
 from webui_config import UiConfig  # Configuration settings for the web UI
 from llm_connector import llm_stream_result, LlmGenerationParameters, craft_prompt
 from document_rag_processor import topk_documents, RagParameters
+
+from feedback_db import feedback_insert
 
 
 def feedback_callback(user_prompt, response):
@@ -35,7 +33,8 @@ def feedback_callback(user_prompt, response):
                 feedback_score = 0
         else:
             raise NotImplementedError(f"Feedback type {feedback_type} is not supported.")
-        print("feedback_callback", user_prompt, response, feedback_type, feedback_score, feedback_text)
+
+        feedback_insert(feedback_score, feedback_text, user_prompt, response)
 
     return inner
 
