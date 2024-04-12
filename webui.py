@@ -3,14 +3,10 @@
 ##########################
 
 # Python Standard Library Imports
-import io  # Input/Output operations
-import random  # Random number generation
 import uuid  # Universally Unique Identifier generation
 from pathlib import Path  # Handling file system paths
-from typing import NamedTuple  # Type hinting for named tuples
 
 # Third-Party Library Imports
-import PyPDF2  # PDF manipulation library
 import streamlit as st  # UI Framework for creating web applications
 from streamlit_feedback import streamlit_feedback # Feedback widget for Streamlit
 
