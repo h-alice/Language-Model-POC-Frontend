@@ -10,6 +10,12 @@ from langchain.chains import LLMChain        # LangChain Library
 from langchain.prompts import PromptTemplate # LangChain Library
 from langchain_community.llms import HuggingFaceTextGenInference
 
+import time
+
+# Text generation inference APIs.
+import text_generation
+import text_generation.errors
+
 from webui_config import LlmModelConfig
 
 # Some prompt templates.
@@ -30,7 +36,7 @@ If a question does not make any sense, or is not factually coherent, explain why
 Answer the question in Markdown format for readability, use bullet points if possible.
 """
 
-RAG_STUB = """
+RAG_STEM = """
 If there is nothing in the context relevant to the question at hand, just resuse to answer it. Don't try to make up an answer.
 
 Anything between the following `context` html blocks is retrieved from a knowledge bank, not part of the conversation with the user. 
@@ -53,7 +59,8 @@ class LlmGenerationParameters(NamedTuple):
                    repetition_penalty=repetition_penalty)
 
 #
-def llm_stream_result(prompt: str, llm_model: LlmModelConfig, llm_parameter: LlmGenerationParameters) -> str:
+def llm_stream_result(prompt: str, llm_model: LlmModelConfig, llm_parameter: LlmGenerationParameters):
+    # Check LLM service provider.
     if llm_model.provider.lower() == "huggingface":
         llm = HuggingFaceTextGenInference(
             inference_server_url=llm_model.endpoint,
@@ -62,10 +69,23 @@ def llm_stream_result(prompt: str, llm_model: LlmModelConfig, llm_parameter: Llm
             top_p=llm_parameter.top_p,
             temperature=llm_parameter.temperature,
             repetition_penalty=llm_parameter.repetition_penalty,
-        )
+        )                
     else:
         raise NotImplemented("May implement someday lol.")
-    return llm.stream(prompt)
+    
+    # This is the broker function that handles the limit of concurrent requests.
+    def streamer():
+        
+        while True: # Retry on overload.
+            try:
+                # If we get the resource, we can start streaming.
+                for token in llm.stream(prompt):
+                    yield token
+                break
+            except text_generation.errors.OverloadedError: # Overload error.
+                time.sleep(5) # Wait for 5 seconds and continue.
+                continue
+    return streamer() # Return the generator.
 
 def craft_prompt(user_input, rag_content: List[Document]=[]):
     prompt = PromptTemplate(
@@ -78,7 +98,7 @@ def craft_prompt(user_input, rag_content: List[Document]=[]):
 
     if rag_content:
         rag_documents = "\n".join([x.page_content for x in rag_content])
-        rag_prompt = RAG_STUB + f"<context>\n{rag_documents}\n</context>\n"
+        rag_prompt = RAG_STEM + f"<context>\n{rag_documents}\n</context>\n"
         user_prompt = user_prompt.partial(rag=rag_prompt)
         
     prompt = user_prompt.format(user=user_input) 
