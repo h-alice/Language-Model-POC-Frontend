@@ -119,7 +119,7 @@ def main_ui_logic(config: UiConfig):
     #      I haven't trace the internal source code yet, but we may figure out some better solutions.
     if len(st.session_state.messages) >= 1:
         streamlit_feedback(feedback_type="thumbs",
-                                            on_submit=feedback_callback(st.session_state.messages[-2], st.session_state.messages[-1]),
+                                            on_submit=feedback_callback(st.session_state.messages[-2]["content"], st.session_state.messages[-1]["content"]),
                                             optional_text_label="[可選] 提供您的回饋或建議",
                                             key=f"feedback_{int(len(st.session_state.messages)) // 2}")
 
