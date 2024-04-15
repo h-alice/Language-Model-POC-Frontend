@@ -34,7 +34,10 @@ def feedback_callback(user_prompt, response):
         else:
             raise NotImplementedError(f"Feedback type {feedback_type} is not supported.")
 
-        feedback_insert(feedback_score, feedback_text, user_prompt, response)
+        try:
+            feedback_insert(feedback_score, feedback_text, user_prompt, response)
+        except Exception as ex:
+            print("Exception caughted while inserting feedback: ", ex)
 
     return inner
 
