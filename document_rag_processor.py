@@ -18,18 +18,21 @@ class RagParameters(NamedTuple):
                    chunk_overlap=chunk_overlap, 
                    top_k=top_k)
 
-def topk_documents(query: str, embedding_config: EmbeddingModelConfig, rag_param: RagParameters, document_path_list:List[str]) -> List[Tuple[Document, float]]:
+def topk_documents(query: str, embedding_config: EmbeddingModelConfig, rag_param: RagParameters, document_path_list:List[str], document_preprocessed=False) -> List[Tuple[Document, float]]:
 
     if embedding_config.provider.lower() != "huggingface": raise NotImplemented
 
     # Every elements in 'document_list' is a 'path' to pdf file.
     all_document = []  # Placeholder for all seprated document segments.
 
-    # Load all document.
-    for file_path in document_path_list:
-        p = create_paeser(file_path)
-        document_chunks = p.parse(chunk_size=rag_param.chunk_size, chunk_overlap=rag_param.chunk_overlap)
-        all_document += document_chunks
+    if not document_preprocessed:
+        # Load all document.
+        for file_path in document_path_list:
+            p = create_paeser(file_path)
+            document_chunks = p.parse(chunk_size=rag_param.chunk_size, chunk_overlap=rag_param.chunk_overlap)
+            all_document += document_chunks
+    else:
+        all_document = document_path_list # FIXME: Remove after PoC.
 
     # Retrive top-k document segments.
     embeddings = HuggingFaceInferenceAPIEmbeddings(

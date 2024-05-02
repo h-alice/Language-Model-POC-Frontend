@@ -15,8 +15,12 @@ from webui_config import UiConfig  # Configuration settings for the web UI
 from llm_connector import llm_stream_result, LlmGenerationParameters, craft_prompt
 from document_rag_processor import topk_documents, RagParameters
 
+import pickle
+
 from feedback_db import feedback_insert
 
+
+list_8585_qa = []
 
 def feedback_callback(user_prompt, response):
     def inner(*args):
@@ -68,6 +72,8 @@ def main_ui_logic(config: UiConfig):
 
 
     with st.sidebar:
+        st.markdown("# 神奇小開關")
+        qa_poc_mode = st.checkbox('Q&A PoC Mode')
         st.markdown("# 參數設定")
         with st.expander("參數說明"):
             st.markdown("### LLM Generation Parameter")
@@ -156,8 +162,11 @@ def main_ui_logic(config: UiConfig):
 
         ## RAG     
         rag_docs = []
-        if st.session_state["documents"]:   # Document list is not null, invoke RAG.
-            topk_doc_score = topk_documents(user_input, embedding_conf, rag_param, st.session_state["documents"])
+        if st.session_state["documents"] or qa_poc_mode:   # Document list is not null, invoke RAG.
+            if qa_poc_mode:
+                topk_doc_score = topk_documents(user_input, embedding_conf, rag_param, list_8585_qa, True)
+            else:    
+                topk_doc_score = topk_documents(user_input, embedding_conf, rag_param, st.session_state["documents"])
             rag_docs = [x for x, _ in topk_doc_score]
             rag_reference = ""
             for d, score in topk_doc_score:
@@ -191,6 +200,9 @@ def main_ui_logic(config: UiConfig):
 
 
 if __name__ == "__main__":
+
+    with open("8585_sep_by_qapair.pkl", "rb") as f:
+        list_8585_qa = pickle.load(f)
 
     st.set_page_config(page_title="LMPoC 對話介面")
 
